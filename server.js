@@ -1,33 +1,62 @@
-const express = require('express');
-const fs = require('fs');
+import express from 'express';
+import Productos from './api/productos.js'
 
-const app = express();
+let productos = new Productos;
+
 const PORT = 8080;
 
-const server = app.listen(PORT, ()=>{
-    console.log(`Servidor http escuchando en el Puerto ${server.address().port}`)
-})
+const app = express();
+const routerProductos = express.Router();
 
+app.use(express.static('public'));
+app.use('/api', routerProductos);
+
+routerProductos.use(express.json());
+routerProductos.use(express.urlencoded({extended: true}));
+
+
+
+
+
+const server = app.listen(PORT, () =>{
+    console.log(`Servidor escuchando en el puerto ${server.address().port}`)
+})
 server.on('error', error => console.log(`Error en el servidor ${error}`))
 
-app.get('/productos', (req, res) => {
 
-    const contenido = fs.readFileSync('productos.txt','utf-8');
-    res.send(contenido);
-
+//Devuelve todos los productos
+routerProductos.get('/productos/listar', (req, res) => {
+    res.json(productos.listarAll());
 })
 
-app.get('/productoRandom', (req, res) => {
-    
-    const contenido = fs.readFileSync('productos.txt','utf-8');
+//Devuelve un producto según su ID
+routerProductos.get('/productos/listar/:id', (req, res) => {
+    let { id } = req.params
+    res.json(productos.listar(id))
+})
 
-    const contenidoParseado = JSON.parse(contenido);
 
-    const tamaño = contenidoParseado.length -1
+//Recibe y agrega un producto, y lo devuelve con el ID asignado
+routerProductos.post('/productos/guardar', (req, res) => {
+    let producto = req.body
+    productos.guardar(producto)
+    res.json(producto)
+})
 
-    const random = Math.round(Math.random() * (tamaño - 0) + 0);
-    console.log(tamaño)
-    console.log(random)
-    res.send(contenidoParseado[random]);
 
+
+//Recibe y actualiza un producto según su ID
+routerProductos.put('/productos/actualizar/:id', (req,res) => {
+    let { id } = req.params
+    let producto = req.body
+    productos.actualizar(producto,id)
+    res.json(producto)
+})
+
+
+//Elimina un producto según su ID
+routerProductos.delete('/productos/borrar/:id', (req,res) => {
+    let { id } = req.params
+    let producto = productos.borrar(id)
+    res.json(producto)
 })
